@@ -17,7 +17,8 @@
         </div>
       </div>
       <div class="controls" role="group" aria-label="Mode and sound controls">
-        <button class="mode-button active" data-mode="practice">Practice</button>
+        <button class="mode-button active" data-mode="sight">Sight Word</button>
+        <button class="mode-button" data-mode="word-hunt">Word Hunt</button>
         <button class="mode-button" data-mode="quick">Quick 10</button>
         <button class="mode-button" data-mode="marquee">Marquee Party</button>
         <button class="audio-toggle" aria-pressed="false" aria-label="Toggle sound">🔈</button>
@@ -27,6 +28,7 @@
     <section id="marquee" aria-label="Princess marquee">
       <div class="letters" id="letters"></div>
       <div class="sparkles" id="sparkles"></div>
+      <div class="confetti-layer" id="confetti-layer"></div>
     </section>
 
     <section id="prompt-area">
@@ -52,11 +54,11 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon">✨</div>
-        <div><strong>Mode</strong><br><span id="mode-label">Practice</span></div>
+        <div><strong>Mode</strong><br><span id="mode-label">Sight Word</span></div>
       </div>
     </section>
 
-    <div id="footer-note">Tip: Hover or focus a button to hear a soft sparkle. Sound, font, and case can be tuned in Options.</div>
+    <div id="footer-note">Tip: Click a word to hear a sound. Sound, font, and case can be tuned in Options.</div>
   </div>
 
   <div id="celebration" role="dialog" aria-modal="true" aria-hidden="true">

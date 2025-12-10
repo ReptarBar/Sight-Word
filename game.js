@@ -9,6 +9,7 @@ const accuracyEl = document.getElementById('accuracy');
 const starsEl = document.getElementById('stars');
 const modeLabel = document.getElementById('mode-label');
 const sparklesLayer = document.getElementById('sparkles');
+const confettiLayer = document.getElementById('confetti-layer');
 const celebration = document.getElementById('celebration');
 const celebrationTitle = document.getElementById('celebration-title');
 const celebrationMessage = document.getElementById('celebration-message');
@@ -148,11 +149,25 @@ const words = [
   { word: 'why', emoji: '❓💡', hint: 'why is that?' }
 ];
 
+// Sight-word focused prompts with simple, related decoys
+const sightWordDeck = [
+  { word: 'box', emoji: '📦', options: ['box', 'fox', 'ox', 'hat'] },
+  { word: 'sun', emoji: '☀️', options: ['sun', 'son', 'run'] },
+  { word: 'hat', emoji: '🎩', options: ['hat', 'cat', 'bat', 'hut'] },
+  { word: 'cake', emoji: '🎂', options: ['cake', 'lake', 'make', 'bake'] },
+  { word: 'car', emoji: '🚗', options: ['car', 'jar', 'far'] },
+  { word: 'dog', emoji: '🐶', options: ['dog', 'log', 'fog', 'dig'] },
+  { word: 'tree', emoji: '🌳', options: ['tree', 'three', 'free', 'bee'] },
+  { word: 'book', emoji: '📚', options: ['book', 'cook', 'look', 'took'] },
+  { word: 'star', emoji: '⭐', options: ['star', 'scar', 'stir'] },
+  { word: 'boat', emoji: '⛵', options: ['boat', 'goat', 'coat'] }
+];
+
 // Game state
 let settings = { audioEnabled: true, fontSize: 'medium', caseStyle: 'lower' };
 let stats = { correct: 0, total: 0, streak: 0, bestStreak: 0, stars: 0 };
 let daily = { date: new Date().toISOString().slice(0, 10), correct: 0, total: 0, stars: 0 };
-let currentMode = 'practice';
+let currentMode = 'sight';
 let roundsPlayed = 0;
 let targetWord = null;
 let marqueeProgress = 0;
@@ -160,7 +175,7 @@ let marqueeProgress = 0;
 // Audio helpers using the Web Audio API for gentle blips
 const AudioKit = (() => {
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const playTone = (frequency, duration = 0.18, volume = 0.08) => {
+  const playTone = (frequency, duration = 0.18, volume = 0.08, offset = 0) => {
     if (!settings.audioEnabled) return;
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
@@ -169,14 +184,17 @@ const AudioKit = (() => {
     osc.frequency.value = frequency;
     gain.gain.value = volume;
     osc.connect(gain).connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + duration);
+    osc.start(now + offset);
+    osc.stop(now + offset + duration);
   };
 
   return {
     sparkle() { playTone(760); },
     success() { playTone(520); playTone(880, 0.15, 0.06); },
-    error() { playTone(220, 0.25, 0.1); }
+    error() { playTone(220, 0.25, 0.1); },
+    celebrate() {
+      [620, 760, 880, 990, 1140].forEach((freq, idx) => playTone(freq, 0.16, 0.07, idx * 0.1));
+    }
   };
 })();
 
@@ -197,6 +215,25 @@ function applySettings() {
 
 function formatWord(word) {
   return settings.caseStyle === 'upper' ? word.toUpperCase() : word.toLowerCase();
+}
+
+function getPlayStyle() {
+  return currentMode === 'quick' || currentMode === 'marquee' ? 'word-hunt' : currentMode;
+}
+
+function modeLabelFor(mode) {
+  switch (mode) {
+    case 'sight':
+      return 'Sight Word';
+    case 'word-hunt':
+      return 'Word Hunt';
+    case 'quick':
+      return 'Quick 10';
+    case 'marquee':
+      return 'Marquee Party';
+    default:
+      return 'Sight Word';
+  }
 }
 
 function buildMarquee() {
@@ -250,7 +287,7 @@ function updateStatsUI() {
 function setMode(mode) {
   currentMode = mode;
   roundsPlayed = 0;
-  modeLabel.textContent = mode === 'practice' ? 'Practice' : mode === 'quick' ? 'Quick 10' : 'Marquee Party';
+  modeLabel.textContent = modeLabelFor(mode);
   modeButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
   startRound();
 }
@@ -283,12 +320,27 @@ function showSparkles() {
   }
 }
 
+function launchConfetti() {
+  confettiLayer.innerHTML = '';
+  const pieces = 50;
+  for (let i = 0; i < pieces; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.top = `${Math.random() * 20}%`;
+    piece.style.animationDelay = `${Math.random() * 0.3}s`;
+    piece.style.background = Math.random() > 0.5 ? 'linear-gradient(135deg, #ffd766, #7cc6fe)' : undefined;
+    confettiLayer.appendChild(piece);
+    setTimeout(() => piece.remove(), 1800);
+  }
+}
+
 function animateButton(btn, correct) {
   btn.classList.add(correct ? 'correct' : 'wrong');
   setTimeout(() => btn.classList.remove('correct', 'wrong'), 800);
 }
 
-function chooseOptions() {
+function chooseWordHuntOptions() {
   const randomWords = shuffle(words).slice(0, 8);
   targetWord = randomWords[Math.floor(Math.random() * randomWords.length)];
   const decoyPool = shuffle(words.filter((w) => w.word !== targetWord.word));
@@ -298,11 +350,38 @@ function chooseOptions() {
   return shuffle([targetWord, ...decoys]);
 }
 
-function renderRound() {
-  const options = chooseOptions();
+function chooseSightPrompt() {
+  const prompt = sightWordDeck[Math.floor(Math.random() * sightWordDeck.length)];
+  targetWord = { word: prompt.word, emoji: prompt.emoji };
+  const options = shuffle(prompt.options).slice(0, Math.max(3, Math.min(4, prompt.options.length)));
+  if (!options.includes(prompt.word)) {
+    options.pop();
+    options.push(prompt.word);
+  }
+  return shuffle(options);
+}
+
+function renderSightRound() {
+  const options = chooseSightPrompt();
   emojiDisplay.textContent = targetWord.emoji;
   emojiDisplay.setAttribute('aria-label', `${targetWord.word} emoji clue`);
-  emojiHint.textContent = targetWord.hint;
+  emojiHint.textContent = 'Which word matches this emoji?';
+  wordChoices.innerHTML = '';
+  options.forEach((wordOption, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'word-button';
+    btn.textContent = formatWord(wordOption);
+    btn.setAttribute('aria-label', `Option ${idx + 1}: ${wordOption}`);
+    btn.addEventListener('click', () => handleChoice(wordOption, btn));
+    wordChoices.appendChild(btn);
+  });
+}
+
+function renderWordHuntRound() {
+  const options = chooseWordHuntOptions();
+  emojiDisplay.textContent = targetWord.emoji;
+  emojiDisplay.setAttribute('aria-label', `${targetWord.word} emoji clue`);
+  emojiHint.innerHTML = `Match this word: <strong>${formatWord(targetWord.word)}</strong>`;
   wordChoices.innerHTML = '';
   options.forEach((opt, idx) => {
     const btn = document.createElement('button');
@@ -310,10 +389,17 @@ function renderRound() {
     btn.textContent = formatWord(opt.word);
     btn.setAttribute('aria-label', `Option ${idx + 1}: ${opt.word}`);
     btn.addEventListener('click', () => handleChoice(opt.word, btn));
-    btn.addEventListener('mouseenter', () => AudioKit.sparkle());
-    btn.addEventListener('focus', () => AudioKit.sparkle());
     wordChoices.appendChild(btn);
   });
+}
+
+function renderRound() {
+  const playStyle = getPlayStyle();
+  if (playStyle === 'sight') {
+    renderSightRound();
+  } else {
+    renderWordHuntRound();
+  }
 }
 
 async function handleChoice(word, button) {
@@ -355,6 +441,8 @@ function checkEndConditions() {
   }
 
   if (currentMode === 'marquee' && marqueeProgress >= totalLetters) {
+    launchConfetti();
+    AudioKit.celebrate();
     openCelebration('Marquee Party!', 'You lit PRINCESS SLOANE all the way. Take a bow!');
     marqueeProgress = 0;
     browser.storage.local.set({ marqueeProgress });
@@ -385,7 +473,7 @@ function startRound() {
 async function init() {
   buildMarquee();
   await loadState();
-  setMode('practice');
+  setMode('sight');
 
   modeButtons.forEach((btn) => {
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
