@@ -1,0 +1,30 @@
+{
+  "manifest_version": 2,
+  "name": "Princess Sloane Sight Words",
+  "version": "1.0.0",
+  "description": "A cozy marquee sight-word game for kids inside Thunderbird.",
+  "applications": {
+    "gecko": {
+      "id": "princess-sloane@sightword",
+      "strict_min_version": "102.0"
+    }
+  },
+  "permissions": ["storage"],
+  "icons": {
+    "48": "icons/icon-48.svg",
+    "128": "icons/icon-128.svg"
+  },
+  "browser_action": {
+    "default_title": "Princess Sloane",
+    "default_popup": "game.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "browser_style": true,
+    "open_in_tab": true
+  },
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  }
+}
