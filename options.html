@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Princess Sloane Options</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Princess Sloane Options</h1>
+    <p>Adjust the cozy feel of the game for Sloane. Changes save automatically.</p>
+
+    <div class="option-row">
+      <label for="audio">Gentle sounds</label>
+      <input type="checkbox" id="audio" />
+    </div>
+
+    <div class="option-row">
+      <label for="font-size">Font size</label>
+      <select id="font-size">
+        <option value="small">Small</option>
+        <option value="medium">Medium</option>
+        <option value="xl">Extra big</option>
+      </select>
+    </div>
+
+    <div class="option-row">
+      <label for="case-style">Word case</label>
+      <select id="case-style">
+        <option value="lower">lowercase</option>
+        <option value="upper">UPPERCASE</option>
+      </select>
+    </div>
+
+    <div class="summary" aria-live="polite">
+      <strong>Today's Progress</strong>
+      <p>Correct words: <span id="today-correct">0</span> / <span id="today-total">0</span></p>
+      <progress id="today-progress" value="0" max="100"></progress>
+      <p>Stars earned today: <span id="today-stars">0</span></p>
+    </div>
+
+    <p class="footer-note">Tip: Start with lowercase, medium font, and sound on. As Sloane grows, switch to uppercase and the extra-big font for easy reads during performances.</p>
+  </div>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>

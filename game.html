@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Princess Sloane Sight Words</title>
+  <link rel="stylesheet" href="game.css" />
+</head>
+<body>
+  <div id="stage" aria-live="polite">
+    <header>
+      <div class="logo" aria-label="Princess Sloane marquee game">
+        <div class="badge" aria-hidden="true">👑</div>
+        <div>
+          <div>Princess Sloane</div>
+          <small style="font-size: 12px; color:#6a4c8f;">cozy sight words</small>
+        </div>
+      </div>
+      <div class="controls" role="group" aria-label="Mode and sound controls">
+        <button class="mode-button active" data-mode="practice">Practice</button>
+        <button class="mode-button" data-mode="quick">Quick 10</button>
+        <button class="mode-button" data-mode="marquee">Marquee Party</button>
+        <button class="audio-toggle" aria-pressed="false" aria-label="Toggle sound">🔈</button>
+      </div>
+    </header>
+
+    <section id="marquee" aria-label="Princess marquee">
+      <div class="letters" id="letters"></div>
+      <div class="sparkles" id="sparkles"></div>
+    </section>
+
+    <section id="prompt-area">
+      <div id="emoji-card" aria-live="assertive">
+        <span id="emoji-display" aria-label="Emoji clue">🎀</span>
+      </div>
+      <div class="hint" id="emoji-hint">Pick the word that matches the picture.</div>
+      <div id="word-choices" aria-label="Word choices"></div>
+    </section>
+
+    <section id="status" aria-label="Score and progress">
+      <div class="stat-card" aria-live="polite">
+        <div class="stat-icon">🔥</div>
+        <div><strong>Streak</strong><br><span id="streak">0</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🎯</div>
+        <div><strong>Accuracy</strong><br><span id="accuracy">0%</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div><strong>Stars</strong><br><span id="stars">0</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✨</div>
+        <div><strong>Mode</strong><br><span id="mode-label">Practice</span></div>
+      </div>
+    </section>
+
+    <div id="footer-note">Tip: Hover or focus a button to hear a soft sparkle. Sound, font, and case can be tuned in Options.</div>
+  </div>
+
+  <div id="celebration" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="celebration-card">
+      <div style="font-size:42px;">🎉</div>
+      <h2 id="celebration-title">Princess Party!</h2>
+      <p id="celebration-message">You lit up the marquee! Keep shining, Sloane.</p>
+      <button class="mode-button" id="close-celebration">Play again</button>
+    </div>
+  </div>
+
+  <script src="game.js" type="module"></script>
+</body>
+</html>
