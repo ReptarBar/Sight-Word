@@ -1,5 +1,7 @@
 // Princess Sloane sight-word game logic
-const marqueeText = 'PRINCESS SLOANE';
+const baseMarqueeText = 'PRINCESS SLOANE';
+const quickMarqueeCycle = ['Sloane ❤️ Dad', 'Sloane ❤️ Mom'];
+let currentMarqueeText = baseMarqueeText;
 const lettersContainer = document.getElementById('letters');
 const wordChoices = document.getElementById('word-choices');
 const emojiDisplay = document.getElementById('emoji-display');
@@ -171,6 +173,7 @@ let currentMode = 'sight';
 let roundsPlayed = 0;
 let targetWord = null;
 let marqueeProgress = 0;
+let quickMarqueeLevel = 0;
 
 // Audio helpers using the Web Audio API for gentle blips
 const AudioKit = (() => {
@@ -238,7 +241,7 @@ function modeLabelFor(mode) {
 
 function buildMarquee() {
   lettersContainer.innerHTML = '';
-  marqueeText.split('').forEach((char, idx) => {
+  currentMarqueeText.split('').forEach((char, idx) => {
     const span = document.createElement('span');
     span.textContent = char;
     span.className = 'letter' + (char === ' ' ? ' space' : '');
@@ -249,7 +252,8 @@ function buildMarquee() {
 
 function updateMarqueeDisplay(progressCount) {
   const letters = lettersContainer.querySelectorAll('.letter');
-  let lit = progressCount;
+  const litMax = marqueeLetterCount();
+  let lit = Math.min(progressCount, litMax);
   letters.forEach((letter) => {
     if (letter.classList.contains('space')) return;
     if (lit > 0) {
@@ -261,12 +265,32 @@ function updateMarqueeDisplay(progressCount) {
   });
 }
 
+function marqueeLetterCount(text = currentMarqueeText) {
+  return text.replace(/\s/g, '').length;
+}
+
+function resetMarqueeProgress() {
+  marqueeProgress = 0;
+  updateMarqueeDisplay(marqueeProgress);
+  browser.storage.local.set({ marqueeProgress });
+}
+
+function setMarqueeText(text, { resetProgress = true } = {}) {
+  currentMarqueeText = text;
+  buildMarquee();
+  if (resetProgress) {
+    resetMarqueeProgress();
+  } else {
+    updateMarqueeDisplay(marqueeProgress);
+  }
+}
+
 async function loadState() {
   const stored = await browser.storage.local.get({ settings: null, stats: null, daily: null, marqueeProgress: 0 });
   settings = stored.settings || settings;
   stats = stored.stats || stats;
   daily = stored.daily || daily;
-  marqueeProgress = stored.marqueeProgress || 0;
+  marqueeProgress = Math.min(stored.marqueeProgress || 0, marqueeLetterCount());
   const today = new Date().toISOString().slice(0, 10);
   if (daily.date !== today) {
     daily = { date: today, correct: 0, total: 0, stars: 0 };
@@ -285,8 +309,16 @@ function updateStatsUI() {
 }
 
 function setMode(mode) {
+  const previousMode = currentMode;
   currentMode = mode;
   roundsPlayed = 0;
+
+  if (mode === 'quick') {
+    setMarqueeText(quickMarqueeCycle[quickMarqueeLevel]);
+  } else if (currentMarqueeText !== baseMarqueeText) {
+    setMarqueeText(baseMarqueeText, { resetProgress: previousMode !== mode });
+  }
+
   modeLabel.textContent = modeLabelFor(mode);
   modeButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
   startRound();
@@ -415,6 +447,9 @@ async function handleChoice(word, button) {
     await lightNextLetter();
   } else {
     AudioKit.error();
+    if (currentMode === 'quick') {
+      await lightNextLetter();
+    }
   }
 
   roundsPlayed += 1;
@@ -425,28 +460,32 @@ async function handleChoice(word, button) {
 }
 
 async function lightNextLetter() {
-  const totalLetters = marqueeText.replace(/\s/g, '').length;
+  const totalLetters = marqueeLetterCount();
   marqueeProgress = Math.min(marqueeProgress + 1, totalLetters);
   updateMarqueeDisplay(marqueeProgress);
   await browser.storage.local.set({ marqueeProgress });
 }
 
 function checkEndConditions() {
-  const totalLetters = marqueeText.replace(/\s/g, '').length;
+  const totalLetters = marqueeLetterCount();
   if (currentMode === 'quick' && roundsPlayed >= 10) {
+    launchConfetti();
+    AudioKit.celebrate();
     openCelebration('Quick 10 finished!', 'Amazing focus, Sloane! Ready for another set of 10?');
+    quickMarqueeLevel = (quickMarqueeLevel + 1) % quickMarqueeCycle.length;
+    setMarqueeText(quickMarqueeCycle[quickMarqueeLevel]);
     roundsPlayed = 0;
     startRound();
     return;
   }
 
-  if (currentMode === 'marquee' && marqueeProgress >= totalLetters) {
+  if ((currentMode === 'sight' || currentMode === 'marquee') && marqueeProgress >= totalLetters) {
     launchConfetti();
     AudioKit.celebrate();
     openCelebration('Marquee Party!', 'You lit PRINCESS SLOANE all the way. Take a bow!');
-    marqueeProgress = 0;
-    browser.storage.local.set({ marqueeProgress });
-    updateMarqueeDisplay(marqueeProgress);
+    resetMarqueeProgress();
+    roundsPlayed = 0;
+    startRound();
     return;
   }
 
